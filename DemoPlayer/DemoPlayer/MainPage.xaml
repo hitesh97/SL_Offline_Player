@@ -1,0 +1,23 @@
+﻿<UserControl x:Class="DemoPlayer.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:SSME="clr-namespace:Microsoft.Web.Media.SmoothStreaming;assembly=Microsoft.Web.Media.SmoothStreaming" 
+    mc:Ignorable="d"
+    d:DesignHeight="640" d:DesignWidth="480">
+
+    <Grid x:Name="LayoutRoot">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0.95*"></RowDefinition>
+            <RowDefinition Height="0.05*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <SSME:SmoothStreamingMediaElement AutoPlay="false" x:Name="SmoothPlayer" SmoothStreamingSource="http://mediadl.microsoft.com/mediadl/iisnet/smoothmedia/Experience/BigBuckBunny_720p.ism/Manifest" Grid.Row="0" />
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <Button x:Name="PlayButton" Content="Play" Width="50" Click="PlayButton_Click" Loaded="PlayButton_Loaded"/>
+            <Button x:Name="StopButton" Content="Stop" Width="50" Click="StopButton_Click" />
+            <Button x:Name="clearCacheButton" Content="ClearCache" Width="75" Click="clearCacheButton_Click" Margin="1"/>
+
+        </StackPanel>
+    </Grid>
+</UserControl>
