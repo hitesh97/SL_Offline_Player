@@ -24,6 +24,7 @@ namespace DemoPlayer
             SmoothPlayer.Loaded += new RoutedEventHandler(SmoothPlayer_Loaded);
         }
 
+
         private void clearCacheButton_Click(object sender, RoutedEventArgs e)
         {
             cache.keyUrls.Clear();
@@ -47,22 +48,25 @@ namespace DemoPlayer
 	                                                      System.IO.Path.DirectorySeparatorChar,
 	                                                      "BigBuckBunny");
 
+          private string manifestFileName = "big_Buck_Bunny.manifest";
+
             // Dictionary to track URL/filename pairs of data in cache.
             public Dictionary<string, string> keyUrls = new Dictionary<string, string>(50);
 
-            public ISO_StorageCache()
-            {
-                IsolatedStorageFile isoFileArea = IsolatedStorageFile.GetUserStoreForApplication();
-						
-                foreach (KeyValuePair<string, object> pair in IsolatedStorageSettings.ApplicationSettings)
-                {
-								
-                    if (!keyUrls.ContainsValue((string)pair.Value) && isoFileArea.FileExists((string)pair.Value))
-                        keyUrls.Add(pair.Key, ((string)pair.Value));
-                }
-            }
+          public ISO_StorageCache()
+          {
+            IsolatedStorageFile isoFileArea = IsolatedStorageFile.GetUserStoreForApplication();
 
-            public IAsyncResult BeginPersist(CacheRequest request, CacheResponse response, AsyncCallback callback, object state)
+            foreach (KeyValuePair<string, object> pair in IsolatedStorageSettings.ApplicationSettings)
+            {
+
+              //if (!keyUrls.ContainsValue((string) pair.Value) && isoFileArea.FileExists((string) pair.Value))
+              if (!keyUrls.ContainsValue((string)pair.Value) && File.Exists(rootFolderPath + System.IO.Path.DirectorySeparatorChar + (string)pair.Value))
+                keyUrls.Add(pair.Key, ((string) pair.Value));
+            }
+          }
+
+          public IAsyncResult BeginPersist(CacheRequest request, CacheResponse response, AsyncCallback callback, object state)
             {
                 state = false;
                 CacheAsyncResult ar = new CacheAsyncResult();
@@ -99,7 +103,12 @@ namespace DemoPlayer
 
 		            string fileGuid = Guid.NewGuid().ToString();
 
-		            if (!keyUrls.ContainsValue(fileGuid) && !keyUrls.ContainsKey(((CacheAsyncResult) ar).strUrl))
+	              string resourceUrl = ((CacheAsyncResult) ar).strUrl;
+	              if (resourceUrl.ToLower().Contains("/manifest"))
+	              {
+	                fileGuid = manifestFileName;
+	              }
+                  if (!keyUrls.ContainsValue(fileGuid) && !keyUrls.ContainsKey(resourceUrl))
 		            {
 
 			            //IsolatedStorageFileStream isoFile = isoFileArea.CreateFile(fileGuid);
@@ -138,11 +147,8 @@ namespace DemoPlayer
 
 	        public void OpenMedia(Uri manifestUri)
 	        {
-		       
-		        var manifestFileName = rootFolderPath + System.IO.Path.DirectorySeparatorChar + "big_Buck_Bunny.manifest";
-
 		        //manifest file doesnt exist on file system hence retrive it!
-		        if (!Directory.Exists(rootFolderPath) && (!File.Exists(manifestFileName)))
+            if (!Directory.Exists(rootFolderPath) && (!File.Exists(rootFolderPath + Path.DirectorySeparatorChar + manifestFileName)))
 		        {
 			        WebRequest request = WebRequest.Create(manifestUri);
 			        request.BeginGetResponse(onmanifestRetrieved, request);
@@ -163,7 +169,7 @@ namespace DemoPlayer
 						if (!Directory.Exists(rootFolderPath))
 							Directory.CreateDirectory(rootFolderPath);
 
-						var manifestPath = rootFolderPath + Path.DirectorySeparatorChar + "big_Buck_Bunny.manifest";
+            var manifestPath = rootFolderPath + Path.DirectorySeparatorChar + manifestFileName;
 
 						//open a filestream
 						using (FileStream fs = new FileStream(manifestPath, FileMode.Create, FileAccess.ReadWrite))
@@ -230,7 +236,6 @@ namespace DemoPlayer
 									//manifest file exists on file system hence retrive it!
 									if (Directory.Exists(rootFolderPath) && (File.Exists(manifestFileName)))
 									{
-
 										using (FileStream fs = new FileStream(manifestFileName, FileMode.Open, FileAccess.Read))
 										{
 											return new CacheResponse(fs);			
@@ -248,34 +253,11 @@ namespace DemoPlayer
 
 										if (Directory.Exists(rootFolderPath) && (File.Exists(chunkFilename)))
 										{
-											//create ar in such a way that we can make request for manifest from local file system
 											var stream = File.OpenRead(chunkFilename);
-											using (FileStream fs = new FileStream(chunkFilename, FileMode.Create, FileAccess.ReadWrite))
-											{
-												//create a CacheResponse
-												CacheResponse cacheResp = new CacheResponse(stream);
-												//serialize to the file
-												cacheResp.WriteTo(fs);
-												fs.Flush();
-												fs.Close();
-											}
+                      response = new CacheResponse(stream);
 										}
 									}
 								}
-
-								//if (keyUrls.ContainsKey(((CacheAsyncResult)ar).strUrl))
-								//{
-								//		IsolatedStorageFile isoFileArea = IsolatedStorageFile.GetUserStoreForApplication();
-								//		string filename = keyUrls[((CacheAsyncResult)ar).strUrl];
-
-								//		if (!string.IsNullOrEmpty(filename) && isoFileArea.FileExists(filename))
-								//		{
-								//				IsolatedStorageFileStream stream =
-								//						isoFileArea.OpenFile(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-								//				response = new CacheResponse(stream);
-								//		}
-								//}
-
                 if (response != null)
                     return response;
                 else
